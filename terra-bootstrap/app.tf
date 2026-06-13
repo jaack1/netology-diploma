@@ -11,7 +11,7 @@ resource "kubernetes_deployment_v1" "web_app" {
       metadata { labels = { app = "web-app" } }
       spec {
         container {
-          image = "nginx:latest"
+          image = "nginx:1.30.2"
           name  = "nginx"
           port { container_port = 80 }
         }
@@ -37,26 +37,27 @@ resource "kubernetes_service_v1" "web_service" {
 }
 
 # 3. Yandex Cloud Ingress Declaration
-resource "kubernetes_ingress_v1" "yc_ingress" {
+resource "kubernetes_ingress_v1" "app_ingress" {
   metadata {
-    name = "yc-alb-ingress"
+    name = "app-ingress"
     annotations = {
-      # Instantiates an external Yandex Application Load Balancer automatically
-      "yandex.cloud/ingress-class" = "yc-alb"
-      "ingress.alb.yc.io/external-ipv4-address" = "auto"
+      "nginx.ingress.kubernetes.io/ssl-redirect" = "false"
     }
   }
   spec {
+    ingress_class_name = "nginx"
+
     rule {
-#      host = yandex_kubernetes_cluster.regional_cluster.master[0].external_v4_endpoint
       http {
         path {
-          path = "/my-app"
+          path      = "/"
           path_type = "Prefix"
           backend {
             service {
               name = kubernetes_service_v1.web_service.metadata[0].name
-              port { number = 80 }
+              port {
+                number = 80
+              }
             }
           }
         }
