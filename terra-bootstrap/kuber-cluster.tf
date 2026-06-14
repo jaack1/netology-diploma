@@ -74,8 +74,8 @@ resource "yandex_kubernetes_node_group" "node_group" {
 
     resources {
       core_fraction = 20
-      memory = 2
-      cores  = 2
+      memory = 8
+      cores  = 4
     }
 
     boot_disk {
@@ -117,45 +117,6 @@ resource "yandex_kubernetes_node_group" "node_group" {
   }
 }
 
-# kubeconfig
-
-data "yandex_client_config" "client" {}
-
-data "yandex_kubernetes_cluster" "regional_cluster" {
-  name = "netology-k8s"
-}
-
-resource "local_file" "kubeconfig" {
-  filename = "${path.module}/kubeconfig"
-  content  = <<EOF
-apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: ${base64encode(yandex_kubernetes_cluster.regional_cluster.master[0].cluster_ca_certificate)}
-    server: ${yandex_kubernetes_cluster.regional_cluster.master[0].external_v4_endpoint}
-  name: yc-k8s-cluster
-contexts:
-- context:
-    cluster: yc-k8s-cluster
-    user: yc-user
-  name: yc-k8s-context
-current-context: yc-k8s-context
-kind: Config
-preferences: {}
-users:
-- name: yc-user
-  user:
-    exec:
-      apiVersion: client.authentication.k8s.io/v1beta1
-      command: yc
-      args:
-      - managed-kubernetes
-      - cluster
-      - get-credentials
-      - --id
-      - ${yandex_kubernetes_cluster.regional_cluster.id}
-      - --external
-      - --format
-      - json
-EOF
+output "cluster_id" {
+  value = "for get kubeconfig tape this command \nyc managed-kubernetes cluster get-credentials --id ${yandex_kubernetes_cluster.regional_cluster.id} --external"
 }
